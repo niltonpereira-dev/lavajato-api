@@ -1,0 +1,17 @@
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: postgres-lavajato
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: lavajato
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: devpassword
+    ports:
+      - "5436:5432"
+    volumes:
+      - postgres_lavajato_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_lavajato_data:

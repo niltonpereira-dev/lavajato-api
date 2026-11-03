@@ -1,3 +1,20 @@
+
 spring:
   application:
     name: lavajato-api
+
+  datasource:
+    url: jdbc:postgresql://localhost:5436/lavajato
+    username: postgres
+    password: devpassword
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+
