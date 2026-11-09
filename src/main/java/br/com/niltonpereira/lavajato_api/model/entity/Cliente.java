@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import jakarta.websocket.ClientEndpoint;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "clientes")
@@ -25,6 +27,9 @@ public class Cliente {
 
     @Column(nullable = false)
     private LocalDateTime dataCadastro;
+
+    @OneToMany(mappedBy = "cliente")
+    private List<Veiculo> veiculos = new ArrayList<>();
 
     public Cliente() {
     }
@@ -76,4 +81,11 @@ public class Cliente {
         this.dataCadastro = dataCadastro;
     }
 
+    public List<Veiculo> getVeiculos() {
+        return veiculos;
+    }
+
+    public void setVeiculos(List<Veiculo> veiculos) {
+        this.veiculos = veiculos;
+    }
 }
