@@ -2,6 +2,7 @@ package br.com.niltonpereira.lavajato_api.service;
 
 import br.com.niltonpereira.lavajato_api.dto.VeiculoRequestDto;
 import br.com.niltonpereira.lavajato_api.dto.VeiculoResponseDto;
+import br.com.niltonpereira.lavajato_api.exception.BadRequestException;
 import br.com.niltonpereira.lavajato_api.exception.NotFoundException;
 import br.com.niltonpereira.lavajato_api.model.entity.Cliente;
 import br.com.niltonpereira.lavajato_api.model.entity.Veiculo;
@@ -26,6 +27,11 @@ public class VeiculoService {
 
     @Transactional
     public VeiculoResponseDto cadastrar(VeiculoRequestDto veiculoRequestDto){
+
+        if(veiculoRepository.existsByPlaca(veiculoRequestDto.placa())){
+            throw new BadRequestException("Já existe um veículo cadastro com essa placa");
+        }
+
         Cliente cliente = clienteRepository.findById(veiculoRequestDto.clienteId())
                 .orElseThrow(() -> new NotFoundException("Cliente não encontrado"));
 

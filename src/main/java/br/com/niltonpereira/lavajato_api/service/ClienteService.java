@@ -3,6 +3,7 @@ package br.com.niltonpereira.lavajato_api.service;
 
 import br.com.niltonpereira.lavajato_api.dto.ClienteRequestDto;
 import br.com.niltonpereira.lavajato_api.dto.ClienteResponseDto;
+import br.com.niltonpereira.lavajato_api.exception.BadRequestException;
 import br.com.niltonpereira.lavajato_api.exception.NotFoundException;
 import br.com.niltonpereira.lavajato_api.model.entity.Cliente;
 import br.com.niltonpereira.lavajato_api.model.repository.ClienteRepository;
@@ -22,6 +23,10 @@ public class ClienteService {
 
     @Transactional
     public ClienteResponseDto cadastrar(ClienteRequestDto clienteRequestDto){
+
+        if(clienteRepository.existsByEmail(clienteRequestDto.email())){
+            throw new BadRequestException("Já tem esse email cadastrado");
+        }
 
         Cliente cliente = new Cliente();
 

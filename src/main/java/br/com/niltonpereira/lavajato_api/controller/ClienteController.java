@@ -31,6 +31,7 @@ public class ClienteController {
 
     @GetMapping
     public ResponseEntity<List<ClienteResponseDto>> listarTodos(){
+
         List<ClienteResponseDto> clientes = clienteService.listarTodos();
 
         return ResponseEntity.ok(clientes);
