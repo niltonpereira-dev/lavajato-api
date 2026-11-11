@@ -29,7 +29,6 @@ public class Atendimento {
     @OneToMany(mappedBy = "atendimento",
                 cascade = CascadeType.ALL,
                 orphanRemoval = true)
-
     private List<ItemAtendimento> itens = new ArrayList<>();
 
     @PrePersist
