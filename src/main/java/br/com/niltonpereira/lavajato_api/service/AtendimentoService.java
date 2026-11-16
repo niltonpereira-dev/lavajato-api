@@ -1,13 +1,16 @@
+
 package br.com.niltonpereira.lavajato_api.service;
 
 import br.com.niltonpereira.lavajato_api.dto.AtendimentoRequestDto;
 import br.com.niltonpereira.lavajato_api.dto.AtendimentoResponseDto;
+import br.com.niltonpereira.lavajato_api.dto.AtualizarStatusAtendimentoDto;
 import br.com.niltonpereira.lavajato_api.dto.ItemAtendimentoResponseDto;
 import br.com.niltonpereira.lavajato_api.exception.BadRequestException;
 import br.com.niltonpereira.lavajato_api.exception.NotFoundException;
 import br.com.niltonpereira.lavajato_api.model.entity.Atendimento;
 import br.com.niltonpereira.lavajato_api.model.entity.ItemAtendimento;
 import br.com.niltonpereira.lavajato_api.model.entity.Servico;
+import br.com.niltonpereira.lavajato_api.model.entity.StatusAtendimento;
 import br.com.niltonpereira.lavajato_api.model.entity.Veiculo;
 import br.com.niltonpereira.lavajato_api.model.repository.AtendimentoRepository;
 import br.com.niltonpereira.lavajato_api.model.repository.ServicoRepository;
@@ -28,66 +31,67 @@ public class AtendimentoService {
     private final VeiculoRepository veiculoRepository;
     private final ServicoRepository servicoRepository;
 
-    public AtendimentoService(AtendimentoRepository atendimentoRepository,
-                              VeiculoRepository veiculoRepository, ServicoRepository servicoRepository) {
+    public AtendimentoService(
+            AtendimentoRepository atendimentoRepository,
+            VeiculoRepository veiculoRepository,
+            ServicoRepository servicoRepository
+    ) {
         this.atendimentoRepository = atendimentoRepository;
         this.veiculoRepository = veiculoRepository;
         this.servicoRepository = servicoRepository;
     }
 
-
     @Transactional
-    public AtendimentoResponseDto cadastrar(AtendimentoRequestDto atendimentoRequestDto){
+    public AtendimentoResponseDto cadastrar(AtendimentoRequestDto dto) {
 
-        Veiculo veiculo = veiculoRepository.findById(atendimentoRequestDto.veiculoId())
-                .orElseThrow(() -> new NotFoundException("Veículo não encontrado"));
+        Veiculo veiculo = veiculoRepository.findById(dto.veiculoId())
+                .orElseThrow(() ->
+                        new NotFoundException("Veículo não encontrado"));
 
         Atendimento atendimento = new Atendimento();
         atendimento.setVeiculo(veiculo);
+        atendimento.setStatus(StatusAtendimento.AGUARDANDO);
 
         BigDecimal valorTotal = BigDecimal.ZERO;
-
         List<ItemAtendimento> itens = new ArrayList<>();
-
         Set<Long> servicosAdicionados = new HashSet<>();
 
-        for (var itemDto : atendimentoRequestDto.itens()){
-            if(!servicosAdicionados.add(itemDto.servicoId())){
-                throw new BadRequestException("O mesmo serviço não pode ser adicionado duas vezes");
+        for (var itemDto : dto.itens()) {
+
+            if (!servicosAdicionados.add(itemDto.servicoId())) {
+                throw new BadRequestException(
+                        "O mesmo serviço não pode ser adicionado duas vezes");
             }
 
             Servico servico = servicoRepository.findById(itemDto.servicoId())
-                    .orElseThrow(() -> new NotFoundException("Serviço não encontrado"));
+                    .orElseThrow(() ->
+                            new NotFoundException("Serviço não encontrado"));
 
-            if(Boolean.FALSE.equals(servico.getAtivo())){
-                throw new BadRequestException("Não é possivel adicionar um serviço inativo");
+            if (Boolean.FALSE.equals(servico.getAtivo())) {
+                throw new BadRequestException(
+                        "Não é possível adicionar um serviço inativo");
             }
 
             ItemAtendimento item = new ItemAtendimento();
-
             item.setAtendimento(atendimento);
             item.setServico(servico);
             item.setValorCobrado(servico.getValor());
 
             itens.add(item);
-
             valorTotal = valorTotal.add(servico.getValor());
         }
 
         atendimento.setItens(itens);
         atendimento.setValorTotal(valorTotal);
 
-        Atendimento atendimentoSalvo = atendimentoRepository.save(atendimento);
+        Atendimento salvo = atendimentoRepository.save(atendimento);
 
-        return toResponse(atendimentoSalvo);
-
-
-
-
+        return toResponse(salvo);
     }
 
     @Transactional(readOnly = true)
-    public List<AtendimentoResponseDto> listarTodos(){
+    public List<AtendimentoResponseDto> listarTodos() {
+
         return atendimentoRepository.findAll()
                 .stream()
                 .map(this::toResponse)
@@ -95,89 +99,116 @@ public class AtendimentoService {
     }
 
     @Transactional(readOnly = true)
-    public AtendimentoResponseDto buscarPorId(Long id){
+    public AtendimentoResponseDto buscarPorId(Long id) {
 
-        Atendimento atendimento = atendimentoRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Atendimento não encontrado"));
+        Atendimento atendimento = buscarAtendimento(id);
 
         return toResponse(atendimento);
     }
-    private AtendimentoResponseDto toResponse (Atendimento atendimento){
 
-        List<ItemAtendimentoResponseDto> itens = atendimento.getItens()
-                .stream()
-                .map(item -> new ItemAtendimentoResponseDto(
-                        item.getServico().getId(),
-                        item.getServico().getNome(),
-                        item.getValorCobrado()
-                ))
-                .toList();
+    @Transactional
+    public AtendimentoResponseDto atualizar(
+            Long id,
+            AtendimentoRequestDto dto
+    ) {
+
+        Atendimento atendimento = buscarAtendimento(id);
+
+        Veiculo veiculo = veiculoRepository.findById(dto.veiculoId())
+                .orElseThrow(() ->
+                        new NotFoundException("Veículo não encontrado"));
+
+        BigDecimal valorTotal = BigDecimal.ZERO;
+        List<ItemAtendimento> itens = new ArrayList<>();
+        Set<Long> servicosAdicionados = new HashSet<>();
+
+        for (var itemDto : dto.itens()) {
+
+            if (!servicosAdicionados.add(itemDto.servicoId())) {
+                throw new BadRequestException(
+                        "O mesmo serviço não pode ser adicionado duas vezes");
+            }
+
+            Servico servico = servicoRepository.findById(itemDto.servicoId())
+                    .orElseThrow(() ->
+                            new NotFoundException("Serviço não encontrado"));
+
+            if (Boolean.FALSE.equals(servico.getAtivo())) {
+                throw new BadRequestException(
+                        "Não é possível adicionar um serviço inativo");
+            }
+
+            ItemAtendimento item = new ItemAtendimento();
+            item.setAtendimento(atendimento);
+            item.setServico(servico);
+            item.setValorCobrado(servico.getValor());
+
+            itens.add(item);
+            valorTotal = valorTotal.add(servico.getValor());
+        }
+
+        atendimento.setVeiculo(veiculo);
+        atendimento.setItens(itens);
+        atendimento.setValorTotal(valorTotal);
+
+        return toResponse(atendimento);
+    }
+
+
+    @Transactional
+    public AtendimentoResponseDto atualizarStatus(
+            Long id,
+            AtualizarStatusAtendimentoDto dto
+    ) {
+
+        Atendimento atendimento = buscarAtendimento(id);
+
+        if (dto.status() == null) {
+            throw new BadRequestException("O status é obrigatório");
+        }
+
+        atendimento.setStatus(dto.status());
+
+        Atendimento atendimentoSalvo = atendimentoRepository.save(atendimento);
+
+        return toResponse(atendimentoSalvo);
+    }
+
+
+    @Transactional
+    public void deletar(Long id) {
+
+        Atendimento atendimento = buscarAtendimento(id);
+
+        atendimentoRepository.delete(atendimento);
+    }
+
+    private Atendimento buscarAtendimento(Long id) {
+
+        return atendimentoRepository.findById(id)
+                .orElseThrow(() ->
+                        new NotFoundException("Atendimento não encontrado"));
+    }
+
+    private AtendimentoResponseDto toResponse(Atendimento atendimento) {
+
+        List<ItemAtendimentoResponseDto> itens =
+                atendimento.getItens()
+                        .stream()
+                        .map(item -> new ItemAtendimentoResponseDto(
+                                item.getServico().getId(),
+                                item.getServico().getNome(),
+                                item.getValorCobrado()
+                        ))
+                        .toList();
 
         return new AtendimentoResponseDto(
                 atendimento.getId(),
                 atendimento.getVeiculo().getId(),
                 atendimento.getDataAtendimento(),
                 atendimento.getValorTotal(),
+                atendimento.getStatus(),
                 itens
         );
-    }
-
-    @Transactional
-    public AtendimentoResponseDto atualizar(Long id,
-                                            AtendimentoRequestDto atendimentoRequestDto){
-
-        Atendimento atendimento = atendimentoRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Atendimento não encontrado"));
-
-        Veiculo veiculo = veiculoRepository.findById(atendimentoRequestDto.veiculoId())
-                .orElseThrow(() -> new NotFoundException("Veículo não encontrado"));
-
-        BigDecimal valorTotal = BigDecimal.ZERO;
-
-        List<ItemAtendimento> itens = new ArrayList<>();
-
-        Set<Long> servicosAdicionados = new HashSet<>();
-
-        for (var itemDto : atendimentoRequestDto.itens()){
-
-            if(!servicosAdicionados.add(itemDto.servicoId())){
-                throw new BadRequestException("O mesmo serviço não pode ser adicionado duas vezes");
-            }
-
-            Servico servico = servicoRepository.findById(itemDto.servicoId())
-                    .orElseThrow(() -> new NotFoundException("Não é possivel adicionar um serviço inativo"));
-
-            if(Boolean.FALSE.equals(servico.getAtivo())){
-                throw new BadRequestException("Não é possivel adicionar um serviço inativo");
-            }
-
-            ItemAtendimento item = new ItemAtendimento();
-
-            item.setAtendimento(atendimento);
-            item.setServico(servico);
-            item.setValorCobrado(servico.getValor());
-
-            itens.add(item);
-
-            valorTotal = valorTotal.add(servico.getValor());
-
-            atendimento.setVeiculo(veiculo);
-            atendimento.setItens(itens);
-            atendimento.setValorTotal(valorTotal);
-
-            Atendimento atendimentoSalvo = atendimentoRepository.save(atendimento);
-
-            return toResponse(atendimentoSalvo);
-
-        }
-    }
-
-    @Transactional
-    public void deletar(Long id){
-
-        Atendimento atendimento = atendimentoRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Atendimento não encontrado"));
-
-        atendimentoRepository.delete(atendimento);
     }
 }

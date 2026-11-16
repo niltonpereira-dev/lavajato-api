@@ -8,6 +8,6 @@ public record ClienteResponseDto(
         String nome,
         String telefone,
         String email,
-        LocalDateTime dataCasdatro
+        LocalDateTime dataCadastro
 ) {
 }

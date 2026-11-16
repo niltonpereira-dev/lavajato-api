@@ -3,7 +3,7 @@ package br.com.niltonpereira.lavajato_api.controller;
 
 import br.com.niltonpereira.lavajato_api.dto.ClienteRequestDto;
 import br.com.niltonpereira.lavajato_api.dto.ClienteResponseDto;
-import br.com.niltonpereira.lavajato_api.model.entity.Cliente;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import br.com.niltonpereira.lavajato_api.service.ClienteService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;

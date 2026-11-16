@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 
 public record ItemAtendimentoResponseDto(
 
-        Long SevicoId,
+        Long sevicoId,
         String nomeServico,
         BigDecimal valorCobrado
 ) {

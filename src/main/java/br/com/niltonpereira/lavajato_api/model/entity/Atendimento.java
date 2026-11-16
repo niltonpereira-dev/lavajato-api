@@ -1,5 +1,5 @@
-package br.com.niltonpereira.lavajato_api.model.entity;
 
+package br.com.niltonpereira.lavajato_api.model.entity;
 
 import jakarta.persistence.*;
 
@@ -26,15 +26,25 @@ public class Atendimento {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal valorTotal = BigDecimal.ZERO;
 
-    @OneToMany(mappedBy = "atendimento",
-                cascade = CascadeType.ALL,
-                orphanRemoval = true)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private StatusAtendimento status = StatusAtendimento.AGUARDANDO;
+
+    @OneToMany(
+            mappedBy = "atendimento",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
     private List<ItemAtendimento> itens = new ArrayList<>();
 
     @PrePersist
-    public void prePersist(){
-        if(dataAtendimento == null){
+    public void prePersist() {
+        if (dataAtendimento == null) {
             dataAtendimento = LocalDateTime.now();
+        }
+
+        if (status == null) {
+            status = StatusAtendimento.AGUARDANDO;
         }
     }
 
@@ -70,11 +80,27 @@ public class Atendimento {
         this.valorTotal = valorTotal;
     }
 
+    public StatusAtendimento getStatus() {
+        return status;
+    }
+
+    public void setStatus(StatusAtendimento status) {
+        this.status = status;
+    }
+
     public List<ItemAtendimento> getItens() {
         return itens;
     }
 
     public void setItens(List<ItemAtendimento> itens) {
-        this.itens = itens;
+        this.itens.clear();
+
+        if (itens != null) {
+            for (ItemAtendimento item : itens) {
+                item.setAtendimento(this);
+                this.itens.add(item);
+            }
+        }
     }
 }
+
